@@ -12,7 +12,7 @@ F10::Suspend ;^!s
 }
 
 definirNumero() {
-	global numSup := 748
+	global numSup := 753
 }
 
 ;~ F2::
@@ -144,10 +144,10 @@ Home::
 
 enviarLaudo() {
 	if WinActive("i)hemograma") && !WinActive("Solicitação de Nova Amostra"){
-		Send #{PrintScreen}
-		Sleep 500
-		MouseClick,, 600, 1020
-		;~ MouseClick,, 960, 1020 ;só digita sem enviar
+		;~ Send #{PrintScreen}
+		;~ Sleep 500
+		;~ MouseClick,, 600, 1020
+		MouseClick,, 960, 1020 ;só digita sem enviar
 		;~ MouseClick,, 600, 1020 ;normal
 	} else if WinActive("Solicitação de Nova Amostra"){
 		;~ Sleep 500
