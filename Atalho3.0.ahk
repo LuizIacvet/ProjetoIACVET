@@ -4,7 +4,7 @@ SendMode Input
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 SetTitleMatchMode RegEx
 
-F10::Suspend ;^!s
+F10::Suspend
 ^SPACE::
 {
 	Winset, Alwaysontop, , A
@@ -15,19 +15,7 @@ definirNumero() {
 	global numSup := 753
 }
 
-;~ F2::
-;~ {
-	;~ WinGet, ActiveControlList, ControlListHwnd, A
-	;~ FileAppend, Ctrl #`tClasNN`tData`n, C:\Users\LABORATÓRIO 01\Documents\Pendências\Controls.txt
-	;~ Loop, Parse, ActiveControlList, `n
-	;~ {
-	;~ ControlGetText, theText, %A_LoopField%
-	;~ FileAppend, %a_index%`t%A_LoopField%`t%theText%`n, C:\Users\LABORATÓRIO 01\Documents\Pendências\Controls.txt
-
-;~ }
-;~ }
-
-#+s::Send ^{Insert}
+#+s::Send ^{Insert} ;NÃO PRECISA NO SEGUNDO PC
 
 Esc:: ;Calcular posição do mouse
 {
@@ -44,6 +32,11 @@ Esc:: ;Calcular posição do mouse
 	return
 }
 
+nomeUsuario := A_UserName
+
+^+!k::
+    Run, explorer.exe "C:\Users\%nomeUsuario%\Pictures\Screenshots"
+return
 
 Esconder := False
 
@@ -165,14 +158,14 @@ enviarLaudo() {
 
 laudosConferidos() {
     ; Especifique os caminhos dos diretórios
-    origem := "C:\Users\LABORATÓRIO 01\Pictures\Screenshots\*.*" ; Coloque o caminho da pasta de origem
+    origem := "C:\Users\%nomeUsuario%\Pictures\Screenshots\*.*" ; Coloque o caminho da pasta de origem
     ;~ destino := "C:\Users\LABORATÓRIO 01\Pictures\Enviados\1107" ; Coloque o caminho da pasta de destino
 
 	;Obtém a data atual no formato MMDD
     FormatTime, data, %A_Now%, MMdd
 
 	; Cria o caminho da pasta de destino com a data atual
-	destino := "C:\Users\LABORATÓRIO 01\Pictures\Enviados\" . data
+	destino := "C:\Users\%nomeUsuario%\Pictures\Enviados\" . data
 
 	; Verifica se a pasta de destino existe, se não, cria ela
     if (!FileExist(destino))
@@ -195,13 +188,6 @@ ativarJanela() {
 	WinActivate i)HF-LAB
 	return
 }
-
-clicarHemograma() {
-	textoControle := "hemograma"
-	ControlGetPos, hemoX, hemoY, hemoA, hemoL, OKttbx3, ahk_exe MSACCESS.EXE, i)Hemograma
-	MsgBox, As coordenadas do controle %textoControle% são %hemoX% e %hemoY%.
-}
-
 
 ^g::laudosConferidos()
 
@@ -269,8 +255,11 @@ Delete::
 	NumpadMult::Send LIPEMIA
 	NumpadSub::Send ?
 	!n::MouseClick,, 50, 1020
-	;~ ^k::clicarHemograma()
-	^a::Send, +{home}
+	^a::Send, +{Home}
+	F5::
+		FormatTime, dataHora, %A_Now%, dd/MM/yyyy HH:mm
+		Send, (%dataHora%)
+		return
 }
 
 #IfWinActive i)informações
@@ -278,19 +267,9 @@ Delete::
 	NumpadEnter::MouseClick,, 480, 250
 }
 
-
-
 #IfWinActive i)hemograma
 {
-
-
 	Alt:: MsgBox, Hemograma!
-	;~ Loop
-	;~ {
-		;~ if WinExist("i)caxias"){
-		;~ MsgBox, Caxias!
-		;~ }
-	;~ }
 	Loop
 	{
 		MsgBox, Caxias!
@@ -337,10 +316,7 @@ Delete::
 		ControlSetText, OKtRichTbx2,, i)hemograma
 		Send, {backspace}
 		Sleep 500
-		;~ Send, +{Home} {Backspace}
-		;~ Send, {Backspace}
 		return
-		;~ ControlSetText, OKtRichTbx2,, i)hemograma,
 	}
 
 	PgDn::
