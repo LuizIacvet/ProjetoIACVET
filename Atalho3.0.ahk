@@ -4,6 +4,15 @@ SendMode Input
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 SetTitleMatchMode RegEx
 
+/*
+Alt		!
+Ctrl	^
+Shift	+
+Win		#
+*/
+
+^+r::Reload  ; Ctrl+Alt+R
+^+e::Edit  ; Ctrl+Alt+R
 F10::Suspend
 ^SPACE::
 {
@@ -11,11 +20,25 @@ F10::Suspend
 	return
 }
 
+global numeroAtual := ""
+
 definirNumero() {
-	global numSup := 753
+    InputBox, numeroAtual, Digite um número, Digite o número atual:
+    ;~ MsgBox, O número atual é: %numeroAtual%
 }
 
+^1::definirNumero()
+
+;~ definirNumero() {
+	;~ global numSup := 768
+;~ }
+
 #+s::Send ^{Insert} ;NÃO PRECISA NO SEGUNDO PC
+
++#a::
+	MouseClickDrag, L, 0, 0, 150, 0, 100, R
+	return
+
 
 Esc:: ;Calcular posição do mouse
 {
@@ -26,16 +49,32 @@ Esc:: ;Calcular posição do mouse
 		;~ ToolTip, %WhichControl%`nX%X%`tY%Y%`nW%W%`t%H%
 		;~ MouseGetPos xPos, yPos,, classControl, 1
 		WinGetActiveTitle winTitle
-		ToolTip X(%xPos%)`tY(%yPos%)`n%winTitle%`n%WhichWindow%`nNome do Controle: %WhichControl%`nX%X%`tY%Y%`nW%W%`t%H%
+		ToolTip X(%xPos%)`tY(%yPos%)`n%winTitle%`n%WhichWindow%`nNome do Controle: %WhichControl%`nX%X%`tY%Y%`nW%W%`t%H%`nO número atual é:`t%numeroAtual%
 	}
 	ToolTip
 	return
 }
 
-nomeUsuario := A_UserName
+;~ definirCaminho() {
+	nomeUsuario := A_UserName
+	caminho := "C:\Users\%nomeUsuario%\Pictures\Screenshots"
+;~ }
+
+Right & Numpad0::
+    ImageSearch, FoundX, FoundY, 0, 0, A_ScreenWidth, A_ScreenHeight, C:\Users\LABORATÓRIO 02\Pictures\hemograma.png
+    if (ErrorLevel = 2)
+    MsgBox Could not conduct the search.
+    else if (ErrorLevel = 1)
+    MsgBox Icon could not be found on the screen.
+    else if (ErrorLevel = 0)
+    ;~ MsgBox The icon was found at %FoundX%x%FoundY%.
+    MouseClick,, FoundX+485, FoundY+11
+return
 
 ^+!k::
-    Run, explorer.exe "C:\Users\%nomeUsuario%\Pictures\Screenshots"
+	;~ definirCaminho()
+    Run, explorer.exe "C:\Users\LABORATÓRIO 02\Pictures\Screenshots"
+	;~ MsgBox % nomeUsuario
 return
 
 Esconder := False
@@ -87,22 +126,22 @@ F3::
 
 End::
 {
-	ControlGetPos,, ctrlY,,, OKttbx2, i)hemograma
+	ControlGetPos,, ctrlY,,, OKttbx2, i)hemograma|reticulócitos
 	if (ctrlY = 184){
-		ControlGetText, volumeGlobular, OKttbx2, i)hemograma
+		ControlGetText, volumeGlobular, OKttbx2, i)hemograma|reticulócitos
 		;~ valoresHemato()
 		Send {Up 2}
 		goto valoresHemato
 		;~ MsgBox, Você está no Hematócrito
 	} else if (ctrlY = 164){
 		;~ MsgBox, Você está na Hemoglobina
-		ControlSetText, OKttbx2,, i)hemograma
+		ControlSetText, OKttbx2,, i)hemograma|reticulócitos
 		;~ Sleep 100
 		Send, %hemoglobinaAll%
 		Send, {Enter}
 	} else if (ctrlY = 144){
 		;~ MsgBox, Você está na Hematimetria
-		ControlSetText, OKttbx2,, i)hemograma
+		ControlSetText, OKttbx2,, i)hemograma|reticulócitos
 		;~ Sleep 100
 		Send, %hemaciaCao%
 		Send {Enter}
@@ -112,22 +151,22 @@ End::
 
 Home::
 {
-	ControlGetPos,, ctrlY,,, OKttbx2, i)hemograma
+	ControlGetPos,, ctrlY,,, OKttbx2, i)hemograma|reticulócitos
 	if (ctrlY = 184){
-		ControlGetText, volumeGlobular, OKttbx2, i)hemograma
+		ControlGetText, volumeGlobular, OKttbx2, i)hemograma|reticulócitos
 		;~ valoresHemato()
 		Send {Up 2}
 		goto valoresHemato
 		;~ MsgBox, Você está no Hematócrito
 	} else if (ctrlY = 164){
 		;~ MsgBox, Você está na Hemoglobina
-		ControlSetText, OKttbx2,, i)hemograma
+		ControlSetText, OKttbx2,, i)hemograma|reticulócitos
 		;~ Sleep 100
 		Send, %hemoglobinaAll%
 		Send, {Enter}
 	} else if (ctrlY = 144){
 		;~ MsgBox, Você está na Hematimetria
-		ControlSetText, OKttbx2,, i)hemograma
+		ControlSetText, OKttbx2,, i)hemograma|reticulócitos
 		;~ Sleep 100
 		Send, %hemaciaGato%
 		Send {Enter}
@@ -136,12 +175,11 @@ Home::
 }
 
 enviarLaudo() {
-	if WinActive("i)hemograma") && !WinActive("Solicitação de Nova Amostra"){
-		;~ Send #{PrintScreen}
-		;~ Sleep 500
-		;~ MouseClick,, 600, 1020
-		MouseClick,, 960, 1020 ;só digita sem enviar
-		;~ MouseClick,, 600, 1020 ;normal
+	if WinActive("i)hemograma|reticulócitos") && !WinActive("Solicitação de Nova Amostra"){
+		Send #{PrintScreen}
+		Sleep 500
+		;~ MouseClick,, 960, 1020 ;só digita sem enviar
+		MouseClick,, 600, 1020 ;normal
 	} else if WinActive("Solicitação de Nova Amostra"){
 		;~ Sleep 500
 		;~ MouseClick,, 960, 1020
@@ -158,14 +196,14 @@ enviarLaudo() {
 
 laudosConferidos() {
     ; Especifique os caminhos dos diretórios
-    origem := "C:\Users\%nomeUsuario%\Pictures\Screenshots\*.*" ; Coloque o caminho da pasta de origem
+    origem := "C:\Users\LABORATÓRIO 02\Pictures\Screenshots\*.*" ; Coloque o caminho da pasta de origem
     ;~ destino := "C:\Users\LABORATÓRIO 01\Pictures\Enviados\1107" ; Coloque o caminho da pasta de destino
 
 	;Obtém a data atual no formato MMDD
     FormatTime, data, %A_Now%, MMdd
 
 	; Cria o caminho da pasta de destino com a data atual
-	destino := "C:\Users\%nomeUsuario%\Pictures\Enviados\" . data
+	destino := "C:\Users\LABORATÓRIO 02\Pictures\Enviados\" . data
 
 	; Verifica se a pasta de destino existe, se não, cria ela
     if (!FileExist(destino))
@@ -225,18 +263,34 @@ Delete::
 	global numState := true
 	NumpadAdd::
 	{
+		if (numeroAtual = "") {
+			definirNumero()
+			numeroFixo := numeroAtual
+		} else {
+			ControlGetFocus, controleFocado
+			ControlSetText, %controleFocado%,,
+			if (numState = true) {
+				numeroAtual := numeroFixo
+				Send %numeroAtual%
+				numState := false
+			} else {
+				Send % --numeroAtual
+				numState := true
+				numeroAtual := ++numeroAtual
+			}
+		}
+	return
+	}
+	NumpadSub::
 		ControlGetFocus, controleFocado
 		ControlSetText, %controleFocado%,,
-		if (numState = true) {
-			definirNumero()
-			Send %numSup%
-			numState := false
-		} else {
-			Send % --numSup
-			numState := true
-		}
-		return
-	}
+		Send % --numeroAtual
+	return
+	NumpadMult::
+		ControlGetFocus, controleFocado
+		ControlSetText, %controleFocado%,,
+		Send % ++numeroAtual
+	return
 	NumpadEnter::
 	{
 		numState := true
@@ -254,12 +308,13 @@ Delete::
 	NumpadDiv::Send ICTERÍCIA
 	NumpadMult::Send LIPEMIA
 	NumpadSub::Send ?
-	!n::MouseClick,, 50, 1020
+	^n::MouseClick,, 50, 1020
 	^a::Send, +{Home}
 	F5::
 		FormatTime, dataHora, %A_Now%, dd/MM/yyyy HH:mm
 		Send, (%dataHora%)
 		return
+	^+v::MouseClick,, 700, 70
 }
 
 #IfWinActive i)informações
@@ -267,7 +322,7 @@ Delete::
 	NumpadEnter::MouseClick,, 480, 250
 }
 
-#IfWinActive i)hemograma
+#IfWinActive i)hemograma|reticulócitos
 {
 	Alt:: MsgBox, Hemograma!
 	Loop
@@ -484,11 +539,23 @@ Delete::
 
 #IfWinActive i)eas
 {
-	F2::
-	{
-		ControlFocus,, ahk_id 0x13407b2
-		return
-	}
+	;~ Tab::
+	;~ {
+		;~ ControlGetPos, posiX, posiY,,, OKttbx2, i)eas
+		;~ if (posiX = 650) && (posiY = 251) {
+			;~ MouseClick,, 10, 526, 3
+			;~ MsgBox, Está no Controle Certo! %posiX% %posiY%
+	;~ } 	else {
+			;~ Send, {Down}
+			;~ MsgBox, NÃO está no Controle Certo! %posiX% %posiY%
+	;~ }
+		;~ return
+	;~ }
+
+	;~ Tab::
+		;~ ControlGetPos, posiX, posiY,,, OKttbx2, i)eas
+		;~ MsgBox, X(%posiX%)`tY(%posiY%)
+	;~ return
 
 	NumpadSub::enviarLaudo()
 
@@ -554,6 +621,35 @@ Delete::
 	:*:aw::Ausentes`n
 	:*:acv::Presença de aglomerados de células vesicais.`n
 	:*:=::{+}
+
+VerificarPosicaoEEnviar(teclas, hotkey) {
+    ControlGetPos, posX, posY,,, OKttbx2, i)eas
+    if (posY >= 293 && posY <= 419) {
+        SendInput, %teclas%
+		Sleep 100
+        SendInput, {Enter}
+    } else {
+        ;~ SendInput, {NumpadEnter}
+		SendInput, {%hotkey%}
+    }
+}
+
+NumpadEnter::
+	VerificarPosicaoEEnviar("N", "NumpadEnter")
+	return
+
+Numpad1::
+	VerificarPosicaoEEnviar("{+}", "Numpad1")
+	return
+
+Numpad2::
+	VerificarPosicaoEEnviar("{+}{+}", "Numpad2")
+	return
+
+Numpad3::
+	VerificarPosicaoEEnviar("{+}{+}{+}", "Numpad3")
+	return
+
 }
 
 #IfWinActive i)fezes
@@ -658,7 +754,10 @@ Delete::
 	}
 }
 
-#IfWinActive i)otológica
-{
-	NumpadSub::MouseClick,, 960, 430
-}
+#IfWinActive i)citologia
+	Numpad1::MouseClick,, 750, 350
+	NumpadAdd::
+		;~ if WinExist("i)citologia") {
+		WinActivate i)citologia
+		MouseClick,, 600, 650
+return
