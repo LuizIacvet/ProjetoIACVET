@@ -22,6 +22,11 @@ F10::Suspend
 
 global numeroAtual := ""
 
+chamarUserName() {
+	global nomePC := A_UserName
+	global caminhoImagens := "C:\Users\" . nomePC . "\Pictures\"
+}
+
 definirNumero() {
     InputBox, numeroAtual, Digite um número, Digite o número atual:
     ;~ MsgBox, O número atual é: %numeroAtual%
@@ -29,15 +34,18 @@ definirNumero() {
 
 ^1::definirNumero()
 
-;~ definirNumero() {
-	;~ global numSup := 768
-;~ }
-
-#+s::Send ^{Insert} ;NÃO PRECISA NO SEGUNDO PC
+#+s::
+	chamarUserName()
+	if (nomePC == "LABORATÓRIO 02") {
+		Send {PrintScreen}
+	} else {
+		Send ^{Insert}
+	}
+return
 
 +#a::
 	MouseClickDrag, L, 0, 0, 150, 0, 100, R
-	return
+return
 
 
 Esc:: ;Calcular posição do mouse
@@ -55,26 +63,52 @@ Esc:: ;Calcular posição do mouse
 	return
 }
 
-;~ definirCaminho() {
-	nomeUsuario := A_UserName
-	caminho := "C:\Users\%nomeUsuario%\Pictures\Screenshots"
-;~ }
 
-Right & Numpad0::
-    ImageSearch, FoundX, FoundY, 0, 0, A_ScreenWidth, A_ScreenHeight, C:\Users\LABORATÓRIO 02\Pictures\hemograma.png
-    if (ErrorLevel = 2)
-    MsgBox Could not conduct the search.
-    else if (ErrorLevel = 1)
-    MsgBox Icon could not be found on the screen.
-    else if (ErrorLevel = 0)
-    ;~ MsgBox The icon was found at %FoundX%x%FoundY%.
-    MouseClick,, FoundX+485, FoundY+11
+
+;~ ^+t::
+	;~ chamarUserName()
+	;~ nomeImage := "hemograma2.png"
+	;~ MsgBox, %nomePC%`n%caminhoImagens%%nomeImage%
+;~ return
+
+procurarImagem() {
+	global nomePC, caminhoImagens
+
+    ; Lista de arquivos de imagem possíveis
+    imageFiles := ["hemograma.png", "hemograma2.png", "hemograma3.png", "hemograma4.png", "hemograma5.png", "hemograma6.png"]
+
+	; Loop para iterar sobre cada arquivo de imagem
+	Loop, % imageFiles.MaxIndex()
+	{
+		chamarUserName()
+        ; Obtém o caminho do arquivo de imagem atual
+        currentImage := imageFiles[A_Index]
+		currentPath := caminhoImagens . currentImage
+
+        ; Realiza a pesquisa da imagem atual
+        ;~ ImageSearch, FoundX, FoundY, 0, 0, A_ScreenWidth, A_ScreenHeight, C:\Users\LABORATÓRIO 02\Pictures\%currentImage%
+		ImageSearch, FoundX, FoundY, 0, 0, A_ScreenWidth, A_ScreenHeight, %caminhoImagens%%currentImage%
+		;~ MsgBox % currentPath
+
+        ; Verifica o resultado da pesquisa
+        if (ErrorLevel = 0)
+        {
+            ; Se a imagem for encontrada, clique na posição encontrada
+            MouseClick,, FoundX+485, FoundY+11
+            ; Encerra o loop
+            break
+        }
+	}
+
+    ; Se nenhuma imagem for encontrada, exibe uma mensagem
+    if (ErrorLevel = 1)
+        MsgBox, Nenhuma imagem encontrada na tela.
 return
+}
 
 ^+!k::
-	;~ definirCaminho()
-    Run, explorer.exe "C:\Users\LABORATÓRIO 02\Pictures\Screenshots"
-	;~ MsgBox % nomeUsuario
+	chamarUserName()
+    Run, explorer.exe "%caminhoImagens%Screenshots"
 return
 
 Esconder := False
@@ -304,7 +338,10 @@ Delete::
 {
 	WheelDown::MouseClick,, 180, 70
 	XButton1::MouseClick,, 180, 70
-	WheelUp::MouseClick,, 300, 520
+	WheelUp::
+	Up::
+		MouseClick,, 300, 520
+	return
 	NumpadDiv::Send ICTERÍCIA
 	NumpadMult::Send LIPEMIA
 	NumpadSub::Send ?
@@ -315,6 +352,7 @@ Delete::
 		Send, (%dataHora%)
 		return
 	^+v::MouseClick,, 700, 70
+	Right::procurarImagem()
 }
 
 #IfWinActive i)informações
