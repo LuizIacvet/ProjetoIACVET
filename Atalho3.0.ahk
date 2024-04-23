@@ -335,7 +335,7 @@ Delete::
 		}
 }
 
-#IfWinActive i)número|realizados
+#IfWinActive i)número|realizados|liberar
 	global numState := true
 	NumpadAdd::
 	{
