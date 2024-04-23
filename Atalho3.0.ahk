@@ -478,7 +478,12 @@ Delete::
 		Send, Presença de Microfilárias na amostra enviada.
 		return
 	}
-	:*:atip::Presença de manchas de Gumprecht. Presença de 19% de células atípicas, com relação núcleo:citoplasma alta, anisocitose e anisocariose moderadas, citoplasma discretamente basofílico, cromatina frouxa e ocasionais nucléolos evidentes.{space}
+	:*:atip::
+		InputBox, celulasAtipicas, Insira a quantidade de células atípicas,, Quantidade de Células Atípicas
+			if ErrorLevel
+				return
+			Send % "Presença de manchas de Gumprecht. Presença de " . celulasAtipicas . "% de células atípicas, com relação núcleo:citoplasma alta, anisocitose e anisocariose moderadas, citoplasma discretamente basofílico, cromatina frouxa e ocasionais nucléolos evidentes.{space}"
+	return
 	:*:gum::Presença de manchas de Gumprecht.{space}
 	:*:esf::Presença de ocasionais esferócitos.
 
