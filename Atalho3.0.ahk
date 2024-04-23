@@ -20,6 +20,41 @@ F10::Suspend
 	return
 }
 
+; Definindo uma variável para controlar o estado do script: ON ou OFF
+estadoScript := true
+
+; Função para alternar o estado do script
+alternarEstadoScript() {
+	global estadoScript
+	estadoScript := !estadoScript
+
+	; Se o script estiver ligado, será suspenso; caso contrário, será ativado
+	if (estadoScript)
+		;~ Suspend
+		MsgBox, Script Desligado!
+	else
+		;~ Suspend
+		MsgBox, Script Ligado!
+}
+
+; Defina uma variável para controlar o estado do ícone na bandeja do sistema
+iconeVisivel := true
+
+; Função para alternar a visibilidade do ícone na bandeja do sistema
+AlternarIconeTray() {
+    global iconeVisivel
+    iconeVisivel := !iconeVisivel  ; Inverte o estado atual
+
+    ; Se o ícone estiver visível, oculta-o; caso contrário, exibe-o
+    if (iconeVisivel)
+        Menu, Tray, NoIcon
+    else
+        Menu, Tray, Icon
+}
+
+; Defina uma hotkey para chamar a função AlternarIconeTray
+^+t::AlternarIconeTray()  ; Pressione Ctrl + Alt + T para alternar a visibilidade do ícone na bandeja do sistema
+
 global numeroAtual := ""
 
 chamarUserName() {
@@ -57,7 +92,7 @@ Esc:: ;Calcular posição do mouse
 		;~ ToolTip, %WhichControl%`nX%X%`tY%Y%`nW%W%`t%H%
 		;~ MouseGetPos xPos, yPos,, classControl, 1
 		WinGetActiveTitle winTitle
-		ToolTip X(%xPos%)`tY(%yPos%)`n%winTitle%`n%WhichWindow%`nNome do Controle: %WhichControl%`nX%X%`tY%Y%`nW%W%`t%H%`nO número atual é:`t%numeroAtual%
+		ToolTip X(%xPos%)`tY(%yPos%)`n%winTitle%`n%WhichWindow%`nNome do Controle: %WhichControl%`nX%X%`tY%Y%`nW%W%`t%H%`nO número atual é:`t%numeroAtual%`n
 	}
 	ToolTip
 	return
@@ -246,8 +281,15 @@ laudosConferidos() {
     ; Garante que os caminhos sejam válidos
     if (FileExist(origem) && FileExist(destino)) {
         ; Move os arquivos
-        FileMove, %origem%, %destino%, 1
-        MsgBox, Os arquivos foram movidos com sucesso.
+        contador := 0
+        Loop, Files, %origem%
+        {
+            arquivo := A_LoopFileFullPath
+            FileMove, %arquivo%, %destino%\, 1
+            contador++
+        }
+
+        MsgBox, %contador% arquivos foram movidos com sucesso.
     } else {
         MsgBox, O caminho de origem ou destino é inválido.
     }
@@ -290,7 +332,7 @@ Delete::
 {
 	if WinActive("ahk_exe MSACCESS.EXE"){
 		ativarJanela()
-	}
+		}
 }
 
 #IfWinActive i)número|realizados
@@ -340,16 +382,32 @@ Delete::
 	XButton1::MouseClick,, 180, 70
 	WheelUp::
 	Up::
-		MouseClick,, 300, 520
+		ControlGetFocus, controlAtivo
+		ControlGetPos, posX, posY, , , %controlAtivo%
+	    if (posX = 17 && posY = 500) || (posX = 367 && posY = 61) {
+			SendInput, {Up}
+		} else {
+			MouseClick,, 300, 520
+		}
+	return
+	Left::
+		ControlGetFocus, controlAtivo
+		ControlGetPos, posX, posY, , , %controlAtivo%
+	    if (posX = 17 && posY = 500) || (posX = 367 && posY = 61) {
+			SendInput, {Left}
+		} else {
+			MouseClick,, 700, 70
+		}
 	return
 	NumpadDiv::Send ICTERÍCIA
 	NumpadMult::Send LIPEMIA
 	NumpadSub::Send ?
+	:*:CE::Confirmar Espécie`n
 	^n::MouseClick,, 50, 1020
 	^a::Send, +{Home}
 	F5::
-		FormatTime, dataHora, %A_Now%, dd/MM/yyyy HH:mm
-		Send, (%dataHora%)
+		FormatTime, dataHora, %A_Now%, dd/MM/yyyy
+		Send, (%dataHora%)`n
 		return
 	^+v::MouseClick,, 700, 70
 	Right::procurarImagem()
@@ -792,10 +850,22 @@ Numpad3::
 	}
 }
 
-#IfWinActive i)citologia
+#If WinActive("i)citologia") && !WinActive("i)fecal")
 	Numpad1::MouseClick,, 750, 350
+	Numpad2::MouseClick,, 600, 42
 	NumpadAdd::
 		;~ if WinExist("i)citologia") {
 		WinActivate i)citologia
 		MouseClick,, 600, 650
+return
+
+#IfWinActive i)HF-LAB
+	NumpadAdd::
+		if WinExist("i)citologia") && !WinActive("i)citologia"){
+			;~ MsgBox Existe!
+			MouseClick,, 30, 520
+			WinActivate i)citologia
+		} else {
+			SendInput {NumpadAdd}
+		}
 return
