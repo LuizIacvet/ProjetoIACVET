@@ -20,6 +20,27 @@ F10::Suspend
 	return
 }
 
+ObterDataEHora() {
+	; URL da API que fornece a data/hora
+	url := "http://worldtimeapi.org/api/timezone/America/Sao_Paulo"
+
+    ; Realiza uma solicitação HTTP GET para a API
+    httpRequest := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+    httpRequest.Open("GET", url)
+    httpRequest.Send()
+
+    ; Verifica se a solicitação foi bem-sucedida
+    if (httpRequest.Status = 200) {
+        ; Analisa a resposta JSON para obter a data e hora
+        resposta := httpRequest.ResponseText
+        dataHora := RegExReplace(resposta, ".*""datetime"":"".*T(.*?)\..*", "$1")
+        return dataHora
+    } else {
+        MsgBox Erro ao obter a data e hora externa.
+        return ""
+    }
+}
+
 ; Definindo uma variável para controlar o estado do script: ON ou OFF
 estadoScript := true
 
@@ -56,6 +77,7 @@ AlternarIconeTray() {
 ^+t::AlternarIconeTray()  ; Pressione Ctrl + Alt + T para alternar a visibilidade do ícone na bandeja do sistema
 
 global numeroAtual := ""
+global hematocrito, hmCao, hmGato, hemoglobina, volumeGlobular
 
 chamarUserName() {
 	global nomePC := A_UserName
@@ -64,10 +86,50 @@ chamarUserName() {
 
 definirNumero() {
     InputBox, numeroAtual, Digite um número, Digite o número atual:
-    ;~ MsgBox, O número atual é: %numeroAtual%
 }
 
-^1::definirNumero()
+calcularValores() {
+
+	Random, hbRan, 0.31, 0.35
+	Random, hmDogRan, 6.5, 7.7
+	Random, hmCatRan, 4.0, 5.5
+	global hematocrito := Round(volumeGlobular, 0)
+	global hemoglobina := StrReplace(Round(hematocrito*hbRan, 1), ".", ",")
+	global hmCao := StrReplace(Round(hematocrito/hmDogRan, 2), ".", ",")
+	global hmGato := StrReplace(Round(hematocrito/hmCatRan, 2), ".", ",")
+
+	if (A_ThisHotkey == "End") {
+		ControlGetPos,, ctrlY,,, OKttbx2, i)hemograma|reticulócitos
+		if (ctrlY = 184){
+		ControlGetText, volumeGlobular, OKttbx2, i)hemograma|reticulócitos
+			if (volumeGlobular > 65)
+				MsgBox Hematócrito Muito Alto!
+		Send {Up 2}
+	} else if (ctrlY = 164){
+		ControlSetText, OKttbx2,, i)hemograma|reticulócitos
+		Send, %hemoglobina%
+		Send, {Enter}
+	} else if (ctrlY = 144){
+		ControlSetText, OKttbx2,, i)hemograma|reticulócitos
+		Send, %hmCao%
+		Send {Enter}
+	}
+	} else {
+		ControlGetPos,, ctrlY,,, OKttbx2, i)hemograma|reticulócitos
+		if (ctrlY = 184){
+		ControlGetText, volumeGlobular, OKttbx2, i)hemograma|reticulócitos
+		Send {Up 2}
+	} else if (ctrlY = 164){
+		ControlSetText, OKttbx2,, i)hemograma|reticulócitos
+		Send, %hemoglobina%
+		Send, {Enter}
+	} else if (ctrlY = 144){
+		ControlSetText, OKttbx2,, i)hemograma|reticulócitos
+		Send, %hmGato%
+		Send {Enter}
+	}
+	}
+}
 
 #+s::
 	chamarUserName()
@@ -83,8 +145,10 @@ return
 return
 
 
-Esc:: ;Calcular posição do mouse
+Esc:: ;Calcular posição do mouse global hematocrito, hmCao, hmGato, hemoglobina, volumeGlobular
 {
+	dataHoraExterna := ObterDataEHora()
+
 	while GetKeyState("Esc")
 	{
 		MouseGetPos, xPos, yPos, WhichWindow, WhichControl, 1
@@ -92,19 +156,11 @@ Esc:: ;Calcular posição do mouse
 		;~ ToolTip, %WhichControl%`nX%X%`tY%Y%`nW%W%`t%H%
 		;~ MouseGetPos xPos, yPos,, classControl, 1
 		WinGetActiveTitle winTitle
-		ToolTip X(%xPos%)`tY(%yPos%)`n%winTitle%`n%WhichWindow%`nNome do Controle: %WhichControl%`nX%X%`tY%Y%`nW%W%`t%H%`nO número atual é:`t%numeroAtual%`n
+		ToolTip X(%xPos%)`tY(%yPos%)`n%winTitle%`n%WhichWindow%`nNome do Controle: %WhichControl%`nX%X%`tY%Y%`nW%W%`t%H%`n%dataHoraExterna%`n%hbRan%
 	}
 	ToolTip
 	return
 }
-
-
-
-;~ ^+t::
-	;~ chamarUserName()
-	;~ nomeImage := "hemograma2.png"
-	;~ MsgBox, %nomePC%`n%caminhoImagens%%nomeImage%
-;~ return
 
 procurarImagem() {
 	global nomePC, caminhoImagens
@@ -160,139 +216,108 @@ F12::
 	}
 return
 
-
-;~ /*
-valoresHemato:
-{
-	;~ global hematocrito := Round(++volumeGlobular, 0)
-	if (volumeGlobular > 15) {
-        global hematocrito := Round(++volumeGlobular, 0)
-    } else {
-        global hematocrito := Round(volumeGlobular, 0)
-    }
-	global hemaciaCao := StrReplace(Round(hematocrito/7, 2), ".", ",")
-	global hemaciaGato := StrReplace(Round(hematocrito/5, 2), ".", ",")
-	global hemoglobinaAll := StrReplace(Round(hematocrito/3, 2), ".", ",")
-	return
-}
-
 F3::
 {
-	;~ valoresHemato()
+	global hbRan, hmDogRan, hmCatRanm, hematocrito, hemoglobina, hmCao, hmGato, volumeGlobular
 	while GetKeyState("F3") {
 		ToolTip,
 	(Ltrim
-	O hematócrito é %hematocrito%`%
-	A hematimetria de CÃO é %hemaciaCao%
-	A hematimetria de GATO é %hemaciaGato%
-	A hemoglobina é %hemoglobinaAll%
+	Hemoglobina Random: %hbRan%
+	Hemácia Cão Random: %hmDogRan%
+	Hemácia Gato Random: %hmCatRan%
+	VolumeGlobular: %volumeGlobular%
+	Hematócrito: %hematocrito%
+	Hemoglobina: %hemoglobina%
+	HmCão: %hmCao%
+	HmGato: %hmGato%
 	)
 	}
 	ToolTip
 	return
 }
 
+;~ F4::
+	;~ FileGetTime, dataArquivo, C:\Users\LABORATÓRIO 02\Pictures\Enviados\1205\Captura de Tela (378).png, C
+	;~ FormatTime, dataDoArquivo, %dataArquivo%, ddMM
+	;~ while GetKeyState(A_ThisHotkey)
+		;~ ToolTip %dataDoArquivo%
+	;~ ToolTip
+;~ return
 
-End::
-{
-	ControlGetPos,, ctrlY,,, OKttbx2, i)hemograma|reticulócitos
-	if (ctrlY = 184){
-		ControlGetText, volumeGlobular, OKttbx2, i)hemograma|reticulócitos
-		;~ valoresHemato()
-		Send {Up 2}
-		goto valoresHemato
-		;~ MsgBox, Você está no Hematócrito
-	} else if (ctrlY = 164){
-		;~ MsgBox, Você está na Hemoglobina
-		ControlSetText, OKttbx2,, i)hemograma|reticulócitos
-		;~ Sleep 100
-		Send, %hemoglobinaAll%
-		Send, {Enter}
-	} else if (ctrlY = 144){
-		;~ MsgBox, Você está na Hematimetria
-		ControlSetText, OKttbx2,, i)hemograma|reticulócitos
-		;~ Sleep 100
-		Send, %hemaciaCao%
-		Send {Enter}
-	}
-	return
-}
+;~ F4::
+	;~ origem := "C:\Users\LABORATÓRIO 02\Pictures\Enviados\*.*"
+	;~ destino := "C:\Users\LABORATÓRIO 02\Pictures\Screenshots\"
+	;~ Loop, Files, %origem%, R
+	;~ {
+		;~ arquivo := A_LoopFileFullPath
+		;~ FileMove, %arquivo%, %destino%, 1
+	;~ }
+;~ return
 
-Home::
-{
-	ControlGetPos,, ctrlY,,, OKttbx2, i)hemograma|reticulócitos
-	if (ctrlY = 184){
-		ControlGetText, volumeGlobular, OKttbx2, i)hemograma|reticulócitos
-		;~ valoresHemato()
-		Send {Up 2}
-		goto valoresHemato
-		;~ MsgBox, Você está no Hematócrito
-	} else if (ctrlY = 164){
-		;~ MsgBox, Você está na Hemoglobina
-		ControlSetText, OKttbx2,, i)hemograma|reticulócitos
-		;~ Sleep 100
-		Send, %hemoglobinaAll%
-		Send, {Enter}
-	} else if (ctrlY = 144){
-		;~ MsgBox, Você está na Hematimetria
-		ControlSetText, OKttbx2,, i)hemograma|reticulócitos
-		;~ Sleep 100
-		Send, %hemaciaGato%
-		Send {Enter}
-	}
-	return
-}
+F4::
+	WinGet, active_id, ControlList, A
+	ControlGetFocus, currentControl, A
+
+	ControlGet, nextControl, Hwnd,, %currentControl%, A
+
+	while GetKeyState(A_ThisHotkey)
+		ToolTip, %TabCount%
+	ToolTip
+return
 
 enviarLaudo() {
 	if WinActive("i)hemograma|reticulócitos") && !WinActive("Solicitação de Nova Amostra"){
 		Send #{PrintScreen}
 		Sleep 500
-		;~ MouseClick,, 960, 1020 ;só digita sem enviar
 		MouseClick,, 600, 1020 ;normal
 	} else if WinActive("Solicitação de Nova Amostra"){
-		;~ Sleep 500
-		;~ MouseClick,, 960, 1020
 		MouseClick,, 600, 1020
-	} else if WinActive("i)eas") or WinActive("i)fezes") or WinActive("i)microfilárias") or WinActive("i)giardia") or WinActive("i)hematozoários") or WinActive("i)sarna|fungo"){
-		;~ Sleep 500
+	} else if WinActive("i)eas|fezes|microfilárias|giardia|parvovirose|hematozoários|sarna|fungo"){
 		MouseClick,, 600, 1020 ;normal
-		;~ MouseClick,, 960, 1020 ;só digita
 	} else if WinActive("i)esporotricose"){
 		MouseClick,, 620, 650 ;envia
-		;~ MouseClick,, 1000, 650 ;digita
 	}
 }
 
+contarLaudos() {
+	global nomePC, caminhoImagens
+	chamarUserName()
+
+	caminhoLaudos := "C:\Users\" . nomePC . "\Pictures\Screenshots\*.*"
+	contador := 0
+	Loop, Files, %caminhoLaudos%
+	{
+		contador++
+	}
+	MsgBox, %contador% laudos digitados até agora.
+}
+
 laudosConferidos() {
-    ; Especifique os caminhos dos diretórios
-    origem := "C:\Users\LABORATÓRIO 02\Pictures\Screenshots\*.*" ; Coloque o caminho da pasta de origem
-    ;~ destino := "C:\Users\LABORATÓRIO 01\Pictures\Enviados\1107" ; Coloque o caminho da pasta de destino
+	global nomePC, caminhoImagens
+	chamarUserName()
+	origem := "C:\Users\" . nomePC . "\Pictures\Screenshots\*.*"
 
-	;Obtém a data atual no formato MMDD
-    FormatTime, data, %A_Now%, MMdd
+	if (FileExist(origem)) {
+		contador := 0
+		Loop, Files, %origem%
+		{
+			arquivo := A_LoopFileFullPath
+			FileGetTime, dataArquivo, %arquivo%, C
+			FormatTime, dataArquivo, %dataArquivo%, MMdd
+			destino := "C:\Users\" . nomePC . "\Pictures\Enviados\" . dataArquivo
+			if (!FileExist(destino))
+				FileCreateDir, %destino%
 
-	; Cria o caminho da pasta de destino com a data atual
-	destino := "C:\Users\LABORATÓRIO 02\Pictures\Enviados\" . data
+			if (FileExist(destino))
+				FileMove, %arquivo%, %destino%\, 1
+				contador++
+		}
 
-	; Verifica se a pasta de destino existe, se não, cria ela
-    if (!FileExist(destino))
-        FileCreateDir, %destino%
-
-    ; Garante que os caminhos sejam válidos
-    if (FileExist(origem) && FileExist(destino)) {
-        ; Move os arquivos
-        contador := 0
-        Loop, Files, %origem%
-        {
-            arquivo := A_LoopFileFullPath
-            FileMove, %arquivo%, %destino%\, 1
-            contador++
-        }
-
-        MsgBox, %contador% arquivos foram movidos com sucesso.
-    } else {
-        MsgBox, O caminho de origem ou destino é inválido.
-    }
+		MsgBox %contador% arquivos foram movidos com sucesso.
+	} else {
+		MsgBox O caminho de origem é inválido.
+	}
+return
 }
 
 ativarJanela() {
@@ -304,6 +329,7 @@ ativarJanela() {
 }
 
 ^g::laudosConferidos()
+^+g::contarLaudos()
 
 #IfWinActive i)identificação
 {
@@ -410,7 +436,29 @@ Delete::
 		Send, (%dataHora%)`n
 		return
 	^+v::MouseClick,, 700, 70
-	Right::procurarImagem()
+	Right::
+		procurarImagem()
+	return
+	Insert::
+		Send ICTERÍCIA{+}`n
+		return
+	Home::
+		Send ICTERÍCIA{+}{+}`n
+		return
+	PgUp::
+		Send ICTERÍCIA{+}{+}{+}`n
+		return
+	Delete::
+		Send LIPEMIA{+}`n
+		return
+	End::
+		Send LIPEMIA{+}{+}`n
+		return
+	PgDn::
+		Send LIPEMIA{+}{+}{+}`n
+		return
+
+
 }
 
 #IfWinActive i)informações
@@ -420,6 +468,8 @@ Delete::
 
 #IfWinActive i)hemograma|reticulócitos
 {
+	End::
+	Home::calcularValores()
 	Alt:: MsgBox, Hemograma!
 	Loop
 	{
@@ -438,6 +488,11 @@ Delete::
 		}
 		return
 	}
+
+	^NumpadDiv::
+		MouseClick,, 975, 660
+	return
+
 	NumpadMult::MouseClick,, 815, 1025
 	NumpadSub::MouseClick,, 440, 555
 	;~ NumpadAdd::enviarLaudo()
@@ -488,23 +543,50 @@ Delete::
 	:*:esf::Presença de ocasionais esferócitos.
 
 	NumpadEnter::
-	{
+
 	ControlGetPos, posX, posY,,, OKttbx2, i)hemograma
-    if (posY = 436){
-        Send, 000
+
+	if (posY = 436){
+		Send, 000
 		Send, {Enter}
-    ;~ } else if (posY = 184){ ;do hematócrito para metas
-		;~ MouseClick,, 152, 416, 2
-		;~ Send, 0
-	;~ } else if (posY = 144) && (posX = 745){ ;da leucometria para eosinofilo
-		;~ MouseClick,, 557, 188, 2
-	;~ } else if (posY = 188) && (posX = 557){ ;do eosinofilo para neutrofilo
-		;~ MouseClick,, 557, 268, 2
-	} else {
-        Send, {Tab}
-    }
-	return
+	} else if (posX = 745) && (posY = 144){
+		ControlGetText, leucometriaTotal, OKttbx2, i)hemograma
+		if (leucometriaTotal > 50000)
+			MsgBox, Atenção!!! Leucometria Total Muito Alta!
+		Send {Tab 2}
+	} else if (posX = 557) && (posY = 168){
+		ControlGetText, basofilo, OKttbx2, i)hemograma
+		if (basofilo > 0)
+			MsgBox, ATENÇÃO!!! INSERIU BASÓFILO!
+			ControlSetText, OKttbx2,, i)hemograma,
+		Send {Tab}
+	}else {
+		Send, {Tab}
 	}
+
+    ;~ if (posY = 436){
+        ;~ Send, 000
+		;~ Send, {Enter}
+	;~ } else if {
+
+	;~ } else {
+        ;~ Send, {Tab}
+    ;~ }
+	return
+
+	Right::
+		ControlGetPos, posX, posY,,, OKttbx2, i)hemograma
+		if (posX = 152)
+			MouseClick,, 745, 144, 2
+		return
+
+	Left::
+		ControlGetPos, posX, posY,,, OKttbx2, i)hemograma
+		if (posX > 500) && (posY <= 456)
+			MouseClick,, 152, 144, 1
+		if (posX = 152)
+			MouseClick,, 745, 144, 2
+		return
 
 	Up::
 	{
@@ -517,6 +599,13 @@ Delete::
 		return
 	}
 }
+
+;~ #IfWinActive i)Selecionar os Hemoparasitos
+	;~ Numpad1::
+		;~ MsgBox, Você está na Janela Certa!
+	;~ Numpad2::
+	;~ Numpad3::
+	;~ Numpad4::
 
 #IfWinActive i)resultado
 {
@@ -536,41 +625,36 @@ Delete::
 	}
 }
 
-#IfWinActive i)microfilárias
+#IfWinActive i)giardia|parvovirose|microfilárias
 {
 	Numpad1::
-		MouseClick,, 500, 320
-		ControlSetText, OKtRichTbx2,, i)microfilárias,
-		;~ Sleep 500
-		Send, Negativo. Não foram observadas microfilárias na amostra analisada.
-		enviarLaudo()
-		return
-	Numpad2::
-		MouseClick,, 500, 320
-		ControlSetText, OKtRichTbx2,, i)microfilárias,
-		;~ Sleep 500
-		Send, Positivo. Presença de Microfilárias na amostra analisada.
-		enviarLaudo()
-		return
-	Numpad0::enviarLaudo()
-}
+		if WinActive("i)giardia|parvovirose"){
+			MouseClick,, 500, 320
+			ControlSetText, OKtRichTbx2,, i)giardia|parvovirose,
+			Send, Negativo.
+			enviarLaudo()
+		} else if WinActive("i)microfilárias"){
+			MouseClick,, 500, 320
+			ControlSetText, OKtRichTbx2,, i)microfilárias,
+			Send, Negativo. Não foram observadas microfilárias na amostra analisada.
+			enviarLaudo()
+		}
+	return
 
-#IfWinActive i)giardia
-{
-	Numpad1::
-		MouseClick,, 500, 320
-		ControlSetText, OKtRichTbx2,, i)giardia,
-		;~ Sleep 500
-		Send, Negativo.
-		enviarLaudo()
-		return
 	Numpad2::
-		MouseClick,, 500, 320
-		ControlSetText, OKtRichTbx2,, i)giardia,
-		;~ Sleep 500
-		Send, POSITIVO.
-		enviarLaudo()
-		return
+		if WinActive("i)giardia|parvovirose"){
+			MouseClick,, 500, 320
+			ControlSetText, OKtRichTbx2,, i)giardia|parvovirose,
+			Send, POSITIVO.
+			enviarLaudo()
+		} else if WinActive("i)microfilárias"){
+			MouseClick,, 500, 320
+			ControlSetText, OKtRichTbx2,, i)microfilárias,
+			Send, Positivo. Presença de Microfilárias na amostra analisada.
+			enviarLaudo()
+		}
+	return
+
 	Numpad0::enviarLaudo()
 }
 
@@ -598,7 +682,7 @@ Delete::
 	Numpad3::
 	{
 		MouseClick,, 500, 320
-		Send, Não foi possível realizar a análise solicitada pois a amostra enviada encontra-se inadequada.`nRecomenda-se coletar nova amostra por método de imprint direto.
+		Send, Não foi possível realizar a análise solicitada pois a amostra enviada encontra-se inadequada.`n
 		;~ Sleep 500
 		enviarLaudo()
 		return
@@ -631,7 +715,7 @@ Delete::
 	{
 		while GetKeyState("Esc")
 		{
-			ToolTip 1=Coagulado`n2=Amostra Insuficiente`n3=Dermato Na Fita`n4=Sarfu Inadequado`n5=Oto na Fita`n6=Esporo na Fita
+			ToolTip 1=Coagulado`n2=Amostra Insuficiente`n3=Amostra Inadequada`n4=Sarfu Inadequado`n5=Oto na Fita`n6=Esporo na Fita
 		}
 		ToolTip
 		return
@@ -749,6 +833,10 @@ Numpad2::
 
 Numpad3::
 	VerificarPosicaoEEnviar("{+}{+}{+}", "Numpad3")
+	return
+
+Numpad4::
+	VerificarPosicaoEEnviar("t", "Numpad4")
 	return
 
 }
